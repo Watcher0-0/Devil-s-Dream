@@ -14,6 +14,7 @@ from attacks.exploits import exploit_buffer_overflow
 from utils.logger import log_event
 import asyncio
 import threading
+import time
 
 #command completer
 command_completer = WordCompleter(
@@ -100,10 +101,9 @@ class HackerInterface:
             style=style,
             full_screen=True,
             refresh_interval=1,
-            mouse_support=False  #disabling mouse to ensure keyboard focus
+            mouse_support=False  #disabling mouse to make it more keyboard focused
         )
 
-        #log updater thread
         self.log_thread = threading.Thread(target=self._update_logs, daemon=True)
 
     def _get_status(self):
@@ -121,25 +121,28 @@ class HackerInterface:
                 self.app.invalidate()
             except Exception as e:
                 self.log_area.text += f"\nLog error: {e}"
-            asyncio.sleep(1)  #using asyncio.sleep in a thread
+            time.sleep(1)  
 
     def handle_input(self, buffer):
         command = buffer.text.strip()
         if not command:
             return True
         
-        current_output = self.output_area.text.splitlines()[-4:]
-        self.output_area.text = "\n".join(current_output) + f"\n> {command}"
-        log_event(f"User entered: {command}")
-
-        parts = command.split()
-        cmd = parts[0].lower()
-
         try:
+            current_output = self.output_area.text.splitlines()[-4:]
+            self.output_area.text = "\n".join(current_output) + f"\n> {command}"
+            log_event(f"User entered: {command}")
+
+            parts = command.split()
+            cmd = parts[0].lower()
+
             if cmd == "scan":
                 self._do_scan(parts[1] if len(parts) > 1 else "1-10")
             elif cmd == "connect":
-                self._do_connect(parts[1], parts[2])
+                if len(parts) >= 3:
+                    self._do_connect(parts[1], int(parts[2]))
+                else:
+                    self.output_area.text += "\nUsage: connect <ip> <port>"
             elif cmd == "exploit":
                 self._do_exploit(parts[1], parts[2] if len(parts) > 2 else "buffer_overflow")
             elif cmd == "ddos":
@@ -171,25 +174,23 @@ class HackerInterface:
     def _do_connect(self, ip, port):
         device = self.network.get_device(ip)
         if device and int(port) in device.ports:
-            self.output_area.text += f"\nConnected to {ip}:{port}. Enter password:"
-            self.app.exit()
-            with patch_stdout():
-                session = PromptSession("Password> ", style=style)
-                pwd = session.prompt()
-            response = device._handle_ssh(pwd) if device.ports[int(port)] == "ssh" else "HTTP connection"
+            self.output_area.text += f"\nConnected to {ip}:{port}."
+            response = device._handle_ssh("admin123")
             self.output_area.text += f"\n{response}"
             log_event(f"Connection attempt to {ip}:{port}")
-            self.app.run()
         else:
             self.output_area.text += f"\nNo service on {ip}:{port}"
+            log_event(f"Connection attempt to {ip}:{port}")
 
     def _do_exploit(self, ip, exploit_type):
         device = self.network.get_device(ip)
         if device:
+            self.output_area.text += f"\nAttempting exploit on {ip} (Vulnerable: {device.vulnerable})"
             result = exploit_buffer_overflow(device, "A" * 600)
             self.output_area.text += f"\n{result}"
             if "granted" in result:
                 self.botnet.add_bot(device)
+                self.output_area.text += f"\nDevice {ip} added to botnet"
         else:
             self.output_area.text += f"\nNo device at {ip}"
 
