@@ -1,4 +1,5 @@
 import time
+import random
 import threading
 from config.settings import DDOS_PACKET_SIZE, DDOS_RATE
 from utils.logger import log_event
