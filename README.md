@@ -1,5 +1,7 @@
 # Devil's Dream Network Emulator
 
+![Alt text](./Screenshot_20250918_093813.png)
+
 The project "Devil's Dream" is a python based network simulation tool designed for educational and experimental purposes.It creates a virtual network of 100 devices,each with unique ports and vulnerabilities allowing users to practice cybersecurity techniques such as scanning, exploiting and launching attacks, an AI defender dynamically responds to user actions like adding a layer of challenge. The   interface of the terminal provides a devil inspired experience with real time feedback.
 
 ## Features
@@ -86,6 +88,10 @@ Login successful
 hacker> exploit 192.168.1.1
 CRASH! Shell access granted.
 ```
+
+
+![Alt text](./Screenshot_20250918_132645.png)
+
 
 ## Troubleshooting
 
